@@ -10,7 +10,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.documentfile.provider.DocumentFile
+import com.container.number.ocr.R
 import com.container.number.ocr.databinding.FragmentStartBinding
+import com.container.number.ocr.ui.main.home.HomeFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class StartFragment : Fragment() {
@@ -65,7 +67,9 @@ class StartFragment : Fragment() {
                 // Perform operations on the document using its URI.
                 DocumentFile.fromTreeUri(requireContext(), uri)?.apply {
                     if (this.listFiles().isNotEmpty()){
-                        // goto Home Fragment
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.container, HomeFragment.newInstance(uri))
+                            .commitNow()
                     }
                     else {
                         MaterialAlertDialogBuilder(requireContext())

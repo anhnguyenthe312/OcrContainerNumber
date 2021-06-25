@@ -1,0 +1,197 @@
+package com.container.number.ocr.ui.main.photo
+
+import android.content.DialogInterface
+import android.graphics.Bitmap
+import android.net.Uri
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import com.bumptech.glide.Glide
+import com.container.number.ocr.constant.Constants
+import com.container.number.ocr.databinding.FragmentPhotoBinding
+import com.container.number.ocr.model.data.EventObserver
+import com.container.number.ocr.model.data.Resource
+import com.container.number.ocr.model.entity.PhotoOcr
+import com.container.number.ocr.model.type.Evaluate
+import com.container.number.ocr.utils.BitmapUtils
+import com.container.number.ocr.utils.TextOnImageAnalyzer
+import com.container.number.ocr.utils.WidthHeightUtils
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
+import com.google.mlkit.vision.text.TextRecognition
+
+class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
+
+    companion object {
+        fun newInstance(uri: Uri): PhotoFragment {
+            return PhotoFragment().apply {
+                arguments = Bundle()
+                arguments!!.putString(Constants.EXTRA_URI_STRING, uri.toString())
+            }
+        }
+    }
+
+    private var binding: FragmentPhotoBinding? = null
+    private lateinit var viewModel: PhotoVM
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        binding = FragmentPhotoBinding.inflate(inflater, container, false)
+        return binding!!.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        obServe()
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        viewModel = ViewModelProvider(this).get(PhotoVM::class.java)
+    }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        binding?.apply {
+            val uri = getPhotoUri()
+
+            //decrease size photo to fast load
+            Glide.with(requireContext())
+                .load(uri)
+                .override(350, 350)
+                .into(ivPhoto)
+
+            viewModel.loadPhotoFromUri(requireContext(), uri)
+
+
+            btnReOCr.setOnClickListener {
+                analyzePhoto()
+            }
+
+            btnEvaluate.setOnClickListener {
+                showEvaluateDialog()
+            }
+        }
+    }
+
+    private fun getPhotoUri(): Uri {
+        val uriStr = requireArguments().getString(Constants.EXTRA_URI_STRING)
+        return Uri.parse(uriStr)
+    }
+
+    private fun obServe() {
+        viewModel.originalBitmapEvent.observe(viewLifecycleOwner, EventObserver {
+            when (it.status) {
+                Resource.Status.SUCCESS -> {
+                    binding?.apply {
+                        val uri = getPhotoUri()
+                        viewModel.checkPhotoOcrExist(requireContext(), uri)
+
+                        BitmapUtils.loadBitmapEfficientlyToImageView(
+                            viewModel.originalBitmap!!,
+                            ivPhoto,
+                            requireContext(),
+                            (WidthHeightUtils.getScreenWidth(requireActivity()) * 0.9F).toInt()
+                        )
+                    }
+                }
+                Resource.Status.ERROR -> {
+                    binding?.apply {
+                        btnReOCr.isEnabled = true
+                        btnEvaluate.isEnabled = true
+                    }
+                }
+                Resource.Status.LOADING -> {
+                    binding?.apply {
+                        btnReOCr.isEnabled = false
+                        btnEvaluate.isEnabled = false
+                    }
+                }
+            }
+
+        })
+        viewModel.photoBitmap.observe(viewLifecycleOwner, {
+            binding?.apply {
+                BitmapUtils.loadBitmapEfficientlyToImageView(
+                    it,
+                    ivPhoto,
+                    requireContext(),
+                    (WidthHeightUtils.getScreenWidth(requireActivity()) * 0.9F).toInt()
+                )
+            }
+        })
+        viewModel.startOcrOnPhoto.observe(viewLifecycleOwner, EventObserver {
+            if (it) {
+                analyzePhoto()
+            }
+        })
+
+        viewModel.containerNumberLiveData.observe(viewLifecycleOwner, EventObserver {
+            binding?.apply {
+                txtContainerNumber.text = it
+                btnReOCr.isEnabled = true
+                btnEvaluate.isEnabled = true
+            }
+        })
+
+        viewModel.updatePhotoOcrToUI.observe(viewLifecycleOwner, EventObserver {
+            binding?.apply {
+                btnReOCr.isEnabled = true
+                btnEvaluate.isEnabled = true
+                updateUI(it)
+            }
+        })
+
+    }
+
+    override fun onRecognized(text: Text, croppedBitmap: Bitmap?) {
+        viewModel.onRecognized(text)
+    }
+
+    override fun onRecognizedError(e: Exception) {
+        e.printStackTrace()
+    }
+
+    private fun analyzePhoto() {
+        val recognizer = TextRecognition.getClient()
+        lifecycle.addObserver(recognizer)
+        TextOnImageAnalyzer.analyzeAnImage(
+            recognizer = recognizer,
+            inputImage = InputImage.fromBitmap(viewModel.originalBitmap!!, 0),
+            null,
+            listener = this
+        )
+    }
+
+    private fun showEvaluateDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Set your evaluation!")
+            .setItems(Evaluate.values().map { getString(it.resId) }
+                .toTypedArray()) { dialog, which ->
+                val evaluate = Evaluate.values()[which]
+                viewModel.saveEvaluate(requireContext(), getPhotoUri(), evaluate, viewModel.currentAlgorithm)
+                binding?.apply {
+                    btnEvaluate.text = getString(evaluate.resId)
+                }
+            }
+            .show()
+    }
+
+    private fun updateUI(photoOcr: PhotoOcr) {
+        binding?.apply {
+            txtContainerNumber.text = photoOcr.containerNumber
+            btnEvaluate.text = getString(photoOcr.evaluate.resId)
+            viewModel.drawRectOnly(photoOcr.boundingRect)
+        }
+    }
+}

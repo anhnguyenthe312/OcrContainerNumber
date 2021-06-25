@@ -124,43 +124,18 @@ object BitmapUtils {
         } else bitmap
     }
 
-    fun drawBoundingBox(bitmap: Bitmap, text: Text, boundingBoxType: BoundingBoxType): Bitmap {
+    fun drawBoundingBox(bitmap: Bitmap, rect: Rect): Bitmap {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.DITHER_FLAG).apply {
             strokeJoin = Paint.Join.ROUND
             style = Paint.Style.STROKE
             color = Color.parseColor("#C6FF00")
-            strokeWidth = bitmap.width / 400F
+            strokeWidth = bitmap.width / 300F
         }
 
         val tempBitmap: Bitmap = bitmap.copy(bitmap.config, true)
         val canvas = Canvas(tempBitmap)
         canvas.drawBitmap(bitmap, 0F, 0F, null)
-        when (boundingBoxType) {
-            BoundingBoxType.TextBlock -> {
-                text.textBlocks.forEach { block ->
-                    val rect = RectF(block.boundingBox)
-                    canvas.drawRect(rect, paint)
-                }
-            }
-            BoundingBoxType.Line -> {
-                text.textBlocks.forEach { block ->
-                    block.lines.forEach { line ->
-                        val rect = RectF(line.boundingBox)
-                        canvas.drawRect(rect, paint)
-                    }
-                }
-            }
-            BoundingBoxType.Word -> {
-                text.textBlocks.forEach { block ->
-                    block.lines.forEach { line ->
-                        line.elements.forEach { word ->
-                            val rect = RectF(word.boundingBox)
-                            canvas.drawRect(rect, paint)
-                        }
-                    }
-                }
-            }
-        }
+        canvas.drawRect(rect, paint)
         return tempBitmap
     }
 

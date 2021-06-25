@@ -5,25 +5,153 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/txtStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:layout_marginEnd="5dp"
-        android:background="#80000000"
-        android:paddingStart="8dp"
-        android:paddingTop="2dp"
-        android:paddingEnd="8dp"
-        android:paddingBottom="2dp"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/homeViewPager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/txtOk" />
+
+    <TextView
+        android:id="@+id/txtOkLabel"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
+        android:background="#0f0"
+        android:gravity="center"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:text="Read OK"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toStartOf="@id/txtNotGood"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/txtOk"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
+        android:background="#0f0"
+        android:gravity="center"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@id/txtNotGood"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/txtOkLabel" />
+
+    <TextView
+        android:id="@+id/txtNotGoodLabel"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
+        android:background="#f00"
+        android:gravity="center"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:text="Not Good"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toStartOf="@id/txtNotStable"
+        app:layout_constraintStart_toEndOf="@id/txtOk"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/txtNotGood"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
+        android:background="#f00"
+        android:gravity="center"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@id/txtNotStable"
+        app:layout_constraintStart_toEndOf="@id/txtOk"
+        app:layout_constraintTop_toBottomOf="@id/txtNotGoodLabel" />
+
+    <TextView
+        android:id="@+id/txtNotStableLabel"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
+        android:background="#ff0"
+        android:gravity="center"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:text="Not Stable"
+        android:textColor="@color/black"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/txtRemaining"
+        app:layout_constraintStart_toEndOf="@id/txtNotGood"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/txtNotStable"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
+        android:background="#ff0"
+        android:gravity="center"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/txtRemaining"
+        app:layout_constraintStart_toEndOf="@id/txtNotGood"
+        app:layout_constraintTop_toBottomOf="@id/txtNotStableLabel" />
+
+
+    <TextView
+        android:id="@+id/txtRemainingLabel"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
+        android:background="#eee"
+        android:gravity="center"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:text="Remaining"
+        android:textColor="@color/black"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/txtStatus"
+        app:layout_constraintStart_toEndOf="@id/txtNotStable"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/txtRemaining"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
+        android:background="#eee"
+        android:gravity="center"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/txtStatus"
+        app:layout_constraintStart_toEndOf="@id/txtNotStable"
+        app:layout_constraintTop_toBottomOf="@id/txtRemainingLabel" />
+
+    <TextView
+        android:id="@+id/txtStatus"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:background="#999"
+        android:gravity="center"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:textColor="@color/white"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/txtRemaining"
+        app:layout_constraintTop_toTopOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

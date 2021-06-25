@@ -23,7 +23,9 @@ object ContainerNumberUtils {
 
     fun getCheckDigit(containerNumber: String): Int {
         val containerNumberToCheck =
-            if (containerNumber.length == CONTAINER_NUMBER_LENGTH) containerNumber.substring(containerNumber.length - 1) else containerNumber
+            if (containerNumber.length == CONTAINER_NUMBER_LENGTH) containerNumber.substring(
+                containerNumber.length - 1
+            ) else containerNumber
         when {
             containerNumberToCheck.length != CONTAINER_NUMBER_LENGTH - 1 -> return -1
             containerNumberToCheck[3] !in arrayOf('U', 'I', 'Z') -> return -1
@@ -57,14 +59,13 @@ object ContainerNumberUtils {
     fun verifyDigit(fullContainerNumber: String): Boolean {
         // Get the last number of the container number which is the check digit.
         val lastChar = fullContainerNumber.substring(fullContainerNumber.length - 1)
-        return if(lastChar.isNumber()) {
+        return if (lastChar.isNumber()) {
             val checkDigitToVerify = lastChar.toInt()
             // Get rid of the last number, the last number is the check digit where we want to generated in order to validate.
             val containerNumberToCheck =
                 fullContainerNumber.substring(0, fullContainerNumber.length - 1)
             checkDigitToVerify == getCheckDigit(containerNumberToCheck)
-        }
-        else false
+        } else false
     }
 
     fun verifyDigit(
@@ -105,10 +106,12 @@ object ContainerNumberUtils {
                     // check if line is a container number
                     if (verifyDigit(line.text.trim())) {
                         containerNumber = line.text
-                        rect = getSquareRect(
-                            line.boundingBox,
-                            null,
-                            null,
+                        rect = getBoundRect(
+                            listOf(
+                                line.boundingBox,
+                                null,
+                                null
+                            )
                         )
                         return@breaker
                     }
@@ -125,10 +128,12 @@ object ContainerNumberUtils {
                                 containerNumber = line.elements[i].text.trim() +
                                         line.elements[i + 1].text.trim() +
                                         line.elements[i + 2].text.trim()
-                                rect = getSquareRect(
-                                    line.elements[i].boundingBox,
-                                    line.elements[i + 1].boundingBox,
-                                    line.elements[i + 2].boundingBox,
+                                rect = getBoundRect(
+                                    listOf(
+                                        line.elements[i].boundingBox,
+                                        line.elements[i + 1].boundingBox,
+                                        line.elements[i + 2].boundingBox
+                                    )
                                 )
                                 return@breaker
                             }
@@ -146,10 +151,12 @@ object ContainerNumberUtils {
                                 containerNumber = line.elements[i].text.trim() +
                                         line.elements[i + 1].text.trim() +
                                         pair.second
-                                rect = getSquareRect(
-                                    line.elements[i].boundingBox,
-                                    line.elements[i + 1].boundingBox,
-                                    null
+                                rect = getBoundRect(
+                                    listOf(
+                                        line.elements[i].boundingBox,
+                                        line.elements[i + 1].boundingBox,
+                                        null
+                                    )
                                 )
                                 return@breaker
                             }
@@ -161,21 +168,19 @@ object ContainerNumberUtils {
         return Pair(containerNumber, rect)
     }
 
-    private fun getSquareRect(rect1: Rect?, rect2: Rect?, rect3: Rect?): Rect {
-        val listOfRect = listOfNotNull(rect1, rect2, rect3)
+    private fun getBoundRect(rectList: List<Rect?>): Rect {
+        val listOfRect: List<Rect> = rectList.filterNotNull()
         var minLeft = if (listOfRect.isEmpty()) 0 else listOfRect.minOf { it.left }
         var minTop = if (listOfRect.isEmpty()) 0 else listOfRect.minOf { it.top }
         var maxRight = if (listOfRect.isEmpty()) 0 else listOfRect.maxOf { it.right }
         var maxBottom = if (listOfRect.isEmpty()) 0 else listOfRect.maxOf { it.bottom }
         val width = maxRight - minLeft
         val height = maxBottom - minTop
-        var size = max(width, height)
-        // increase size to 40% to have a overview
-        size = (1.3f * size).toInt()
-        minLeft = minLeft + width / 2 - size / 2
-        minTop = minTop + height / 2 - size / 2
-        maxRight = minLeft + if (listOfRect.size == 2) (1.2f * size).toInt() else size
-        maxBottom = minTop + if (listOfRect.size == 2) (1.2f * size).toInt() else size
+
+        minLeft -= width / 20
+        minTop -= height / 20
+        maxRight += width / 20
+        maxBottom += height / 20
         return Rect(minLeft, minTop, maxRight, maxBottom)
     }
 }
