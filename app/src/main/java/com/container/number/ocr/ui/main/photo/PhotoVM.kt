@@ -79,7 +79,7 @@ class PhotoVM : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             if (originalBitmap != null) {
                 //recognize container number
-                val (containerNumber, rect) = ContainerNumberUtils.getContainerNumber(text)
+                val (containerNumber, rect) = ContainerNumberUtils.getContainerNumber2Line(text)
                 if (containerNumber.isNotEmpty()){
                     _containerNumberLiveData.postValue(Event(containerNumber))
 
