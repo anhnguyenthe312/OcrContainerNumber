@@ -2,6 +2,6 @@
     <string name="app_name">OcrContainerNumber</string>
     <string name="read_ok">Read OK</string>
     <string name="read_not_good">Read not good</string>
-    <string name="read_not_stable">read not stable</string>
+    <string name="read_not_stable">Read not stable</string>
     <string name="not_read">Not read yet</string>
 </resources>

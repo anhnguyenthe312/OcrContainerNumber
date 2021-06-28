@@ -1,7 +1,9 @@
 package com.container.number.ocr.ui.main.photo
 
 import android.content.DialogInterface
+import android.content.res.ColorStateList
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -182,6 +184,7 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
                 viewModel.saveEvaluate(requireContext(), getPhotoUri(), evaluate, viewModel.currentAlgorithm)
                 binding?.apply {
                     btnEvaluate.text = getString(evaluate.resId)
+                    btnEvaluate.backgroundTintList = ColorStateList.valueOf(Color.GRAY)
                 }
             }
             .show()
@@ -192,6 +195,7 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
             txtContainerNumber.text = photoOcr.containerNumber
             btnEvaluate.text = getString(photoOcr.evaluate.resId)
             viewModel.drawRectOnly(photoOcr.boundingRect)
+            btnEvaluate.backgroundTintList = ColorStateList.valueOf(Color.GRAY)
         }
     }
 }
