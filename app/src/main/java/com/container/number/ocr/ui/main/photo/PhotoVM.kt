@@ -22,8 +22,6 @@ import kotlinx.coroutines.launch
 
 class PhotoVM : ViewModel() {
 
-    var currentAlgorithm: OcrAlgorithm = OcrAlgorithm.ONE_LINE
-
     var originalBitmap: Bitmap? = null
         private set
 
@@ -75,11 +73,16 @@ class PhotoVM : ViewModel() {
 
     }
 
-    fun onRecognized(text: Text) {
+    fun onRecognized(text: Text, ocrAlgorithm: OcrAlgorithm) {
         viewModelScope.launch(Dispatchers.IO) {
             if (originalBitmap != null) {
                 //recognize container number
-                val (containerNumber, rect) = ContainerNumberUtils.getContainerNumber2Line(text)
+                val (containerNumber, rect) =
+                    when(ocrAlgorithm){
+                        OcrAlgorithm.OneLine -> ContainerNumberUtils.getContainerNumber(text)
+                        OcrAlgorithm.TwoLine -> ContainerNumberUtils.getContainerNumber2Line(text)
+                        OcrAlgorithm.Vertical -> ContainerNumberUtils.getContainerNumberVertical(text)
+                    }
                 if (containerNumber.isNotEmpty()){
                     _containerNumberLiveData.postValue(Event(containerNumber))
 

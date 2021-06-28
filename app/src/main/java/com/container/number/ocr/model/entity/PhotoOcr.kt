@@ -22,5 +22,5 @@ class PhotoOcr {
     var boundingRect: Rect = Rect()
 
     @ColumnInfo
-    var algorithm: OcrAlgorithm = OcrAlgorithm.ONE_LINE
+    var algorithm: OcrAlgorithm = OcrAlgorithm.OneLine
 }

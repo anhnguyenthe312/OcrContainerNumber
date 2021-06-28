@@ -98,6 +98,14 @@ object ContainerNumberUtils {
         } else Pair(false, -1)
     }
 
+    fun getContainerNumberVertical(visionText: Text): Pair<String, Rect> {
+        var containerNumber = ""
+        var rect = Rect()
+        run breaker@{
+
+        }
+        return Pair(containerNumber, rect)
+    }
     fun getContainerNumber2Line(visionText: Text): Pair<String, Rect> {
         var containerNumber = ""
         var rect = Rect()
@@ -160,7 +168,6 @@ object ContainerNumberUtils {
                     }
                 }
             }
-
         }
         return Pair(containerNumber, rect)
     }

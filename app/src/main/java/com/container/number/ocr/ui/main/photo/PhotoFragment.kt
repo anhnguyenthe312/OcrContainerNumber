@@ -1,6 +1,5 @@
 package com.container.number.ocr.ui.main.photo
 
-import android.content.DialogInterface
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -12,12 +11,16 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
+import com.container.number.ocr.R
 import com.container.number.ocr.constant.Constants
 import com.container.number.ocr.databinding.FragmentPhotoBinding
 import com.container.number.ocr.model.data.EventObserver
 import com.container.number.ocr.model.data.Resource
 import com.container.number.ocr.model.entity.PhotoOcr
 import com.container.number.ocr.model.type.Evaluate
+import com.container.number.ocr.model.type.OcrAlgorithm
+import com.container.number.ocr.ui.main.MainActivity
+import com.container.number.ocr.ui.main.photo.adapter.SelectModeAdapter
 import com.container.number.ocr.utils.BitmapUtils
 import com.container.number.ocr.utils.TextOnImageAnalyzer
 import com.container.number.ocr.utils.WidthHeightUtils
@@ -25,6 +28,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.TextRecognizerOptions
 
 class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
 
@@ -75,14 +79,14 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
 
             viewModel.loadPhotoFromUri(requireContext(), uri)
 
-
-            btnReOCr.setOnClickListener {
-                analyzePhoto()
-            }
-
             btnEvaluate.setOnClickListener {
                 showEvaluateDialog()
             }
+            viewContainerMode.setOnClickListener {
+                showSelectContainerMode()
+            }
+
+            updateContainerModeView()
         }
     }
 
@@ -109,13 +113,11 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
                 }
                 Resource.Status.ERROR -> {
                     binding?.apply {
-                        btnReOCr.isEnabled = true
                         btnEvaluate.isEnabled = true
                     }
                 }
                 Resource.Status.LOADING -> {
                     binding?.apply {
-                        btnReOCr.isEnabled = false
                         btnEvaluate.isEnabled = false
                     }
                 }
@@ -141,14 +143,12 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
         viewModel.containerNumberLiveData.observe(viewLifecycleOwner, EventObserver {
             binding?.apply {
                 txtContainerNumber.text = it
-                btnReOCr.isEnabled = true
                 btnEvaluate.isEnabled = true
             }
         })
 
         viewModel.updatePhotoOcrToUI.observe(viewLifecycleOwner, EventObserver {
             binding?.apply {
-                btnReOCr.isEnabled = true
                 btnEvaluate.isEnabled = true
                 updateUI(it)
             }
@@ -157,7 +157,7 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
     }
 
     override fun onRecognized(text: Text, croppedBitmap: Bitmap?) {
-        viewModel.onRecognized(text)
+        viewModel.onRecognized(text, (requireActivity() as MainActivity).currentAlgorithm)
     }
 
     override fun onRecognizedError(e: Exception) {
@@ -165,7 +165,7 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
     }
 
     private fun analyzePhoto() {
-        val recognizer = TextRecognition.getClient()
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.Builder().build())
         lifecycle.addObserver(recognizer)
         TextOnImageAnalyzer.analyzeAnImage(
             recognizer = recognizer,
@@ -176,12 +176,13 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
     }
 
     private fun showEvaluateDialog() {
+        val selectList = Evaluate.values().filter { it != Evaluate.NOT_READ }
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Set your evaluation!")
-            .setItems(Evaluate.values().map { getString(it.resId) }
+            .setItems(selectList.map { getString(it.resId) }
                 .toTypedArray()) { dialog, which ->
-                val evaluate = Evaluate.values()[which]
-                viewModel.saveEvaluate(requireContext(), getPhotoUri(), evaluate, viewModel.currentAlgorithm)
+                val evaluate = selectList[which]
+                viewModel.saveEvaluate(requireContext(), getPhotoUri(), evaluate, (requireActivity() as MainActivity).currentAlgorithm)
                 binding?.apply {
                     btnEvaluate.text = getString(evaluate.resId)
                     btnEvaluate.backgroundTintList = ColorStateList.valueOf(Color.GRAY)
@@ -196,6 +197,29 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
             btnEvaluate.text = getString(photoOcr.evaluate.resId)
             viewModel.drawRectOnly(photoOcr.boundingRect)
             btnEvaluate.backgroundTintList = ColorStateList.valueOf(Color.GRAY)
+            txtContainerModeName.text = getString(photoOcr.algorithm.stringResId)
+            ivContainerMode.setImageResource(photoOcr.algorithm.imageResId)
+        }
+    }
+
+    private fun showSelectContainerMode() {
+        val adapter = SelectModeAdapter(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.select_container_number_mode))
+            .setAdapter(
+                adapter,
+            ) { dialog, which ->
+                (requireActivity() as MainActivity).currentAlgorithm = OcrAlgorithm.values()[which]
+                updateContainerModeView()
+                analyzePhoto()
+            }
+            .show()
+    }
+
+    private fun updateContainerModeView(){
+        binding?.apply {
+            txtContainerModeName.text = getString((requireActivity() as MainActivity).currentAlgorithm.stringResId)
+            ivContainerMode.setImageResource((requireActivity() as MainActivity).currentAlgorithm.imageResId)
         }
     }
 }

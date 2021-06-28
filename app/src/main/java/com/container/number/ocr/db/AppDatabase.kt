@@ -8,8 +8,8 @@ import androidx.room.TypeConverters
 import com.container.number.ocr.db.dao.PhotoOcrDao
 import com.container.number.ocr.model.data.RectConverter
 import com.container.number.ocr.model.entity.PhotoOcr
-import com.container.number.ocr.model.type.Evaluate
 import com.container.number.ocr.model.type.OcrAlgorithm
+import com.container.number.ocr.model.type.Evaluate
 
 @Database(
     version = 1,
