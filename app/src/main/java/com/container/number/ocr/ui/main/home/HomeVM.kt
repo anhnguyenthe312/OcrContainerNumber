@@ -37,8 +37,8 @@ class HomeVM : ViewModel() {
                             Evaluate.NOT_READ -> {
                             }
                             Evaluate.READ_OK -> readOk += 1
-                            Evaluate.READ_NOT_STABLE -> readNotStable += 1
-                            Evaluate.READ_NOT_GOOD -> readNotGood += 1
+                            Evaluate.INCORRECT -> readNotStable += 1
+                            Evaluate.READ_NOT_OK -> readNotGood += 1
                         }
                     }
                     val remaining = numberOfItems - readOk - readNotGood - readNotStable

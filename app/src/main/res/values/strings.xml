@@ -1,13 +1,13 @@
 <resources>
     <string name="app_name">OcrContainerNumber</string>
     <string name="read_ok">Read OK</string>
-    <string name="read_not_good">Can\'t Read</string>
-    <string name="read_not_stable">Read not stable</string>
+    <string name="read_not_ok">Can\'t Read</string>
+    <string name="read_incorrect">Incorrect</string>
     <string name="not_read">Not read yet</string>
 
     <string name="active_algorithm">Active Algorithm: </string>
     <string name="Container_number_in_one_line">Container # in one line</string>
-    <string name="Container_number_in_two_line">Container # in two line</string>
+    <string name="Container_number_in_two_line">Container # in two lines</string>
     <string name="Container_number_in_vertical">Container # in vertical</string>
     <string name="select_container_number_mode">Select Container Number Algorithm</string>
 

@@ -12,7 +12,7 @@ import com.container.number.ocr.model.type.OcrAlgorithm
 
 class SelectModeAdapter(context: Context) : ArrayAdapter<OcrAlgorithm>(context, R.layout.item_container_number_mode) {
 
-    private val modeList = OcrAlgorithm.values()
+    private val modeList = OcrAlgorithm.values().filter { it != OcrAlgorithm.Vertical }
 
     override fun getCount(): Int = modeList.size
 
