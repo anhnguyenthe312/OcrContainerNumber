@@ -85,21 +85,21 @@ class PhotoVM : ViewModel() {
                     }
                 if (containerNumber.isNotEmpty()){
                     _containerNumberLiveData.postValue(Event(containerNumber))
-
+                    _containerNumber = containerNumber
                     savedDrawRect = rect
                     val boundingBitmap =
-                        BitmapUtils.drawBoundingBox(originalBitmap!!, rect)
+                        BitmapUtils.drawBoundingBox(originalBitmap!!, rect, containerNumber, "")
                     _photoBitmap.postValue(boundingBitmap)
                 }
             }
         }
     }
 
-    fun drawRectOnly(rect: Rect){
+    fun drawRectOnly(rect: Rect, containerNumber: String, evaluate: String){
         viewModelScope.launch {
             savedDrawRect = rect
             val boundingBitmap =
-                BitmapUtils.drawBoundingBox(originalBitmap!!, rect)
+                BitmapUtils.drawBoundingBox(originalBitmap!!, rect, containerNumber, evaluate)
             _photoBitmap.postValue(boundingBitmap)
         }
     }

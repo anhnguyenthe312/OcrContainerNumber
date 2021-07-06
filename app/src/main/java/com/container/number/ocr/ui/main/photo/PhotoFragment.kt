@@ -195,7 +195,7 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
         binding?.apply {
             txtContainerNumber.text = photoOcr.containerNumber
             btnEvaluate.text = getString(photoOcr.evaluate.resId)
-            viewModel.drawRectOnly(photoOcr.boundingRect)
+            viewModel.drawRectOnly(photoOcr.boundingRect, photoOcr.containerNumber, getString(photoOcr.evaluate.resId))
             btnEvaluate.backgroundTintList = ColorStateList.valueOf(Color.GRAY)
             txtContainerModeName.text = getString(photoOcr.algorithm.stringResId)
             ivContainerMode.setImageResource(photoOcr.algorithm.imageResId)

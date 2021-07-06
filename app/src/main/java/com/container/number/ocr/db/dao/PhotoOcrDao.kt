@@ -14,6 +14,6 @@ interface PhotoOcrDao: BaseDao<PhotoOcr> {
     @Query("SELECT * FROM PhotoOcr WHERE uriStr LIKE :folderUriStr || '%'")
     fun getAllPhotoOcrInFolder(folderUriStr: String): Flow<List<PhotoOcr>>
 
-    @Query("SELECT * FROM PhotoOcr")
-    fun getAllPhotoOcr(): Flow<List<PhotoOcr>>
+    @Query("SELECT * FROM PhotoOcr WHERE uriStr LIKE :folderUriStr || '%'")
+    fun getAllPhotoOcrInFolderNotFlow(folderUriStr: String): List<PhotoOcr>
 }

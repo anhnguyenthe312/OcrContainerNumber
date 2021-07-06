@@ -124,7 +124,7 @@ object BitmapUtils {
         } else bitmap
     }
 
-    fun drawBoundingBox(bitmap: Bitmap, rect: Rect): Bitmap {
+    fun drawBoundingBox(bitmap: Bitmap, rect: Rect, containerNumber: String, evaluate: String): Bitmap {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.DITHER_FLAG).apply {
             strokeJoin = Paint.Join.ROUND
             style = Paint.Style.STROKE
@@ -136,6 +136,43 @@ object BitmapUtils {
         val canvas = Canvas(tempBitmap)
         canvas.drawBitmap(bitmap, 0F, 0F, null)
         canvas.drawRect(rect, paint)
+
+        //text
+        val textPaint = Paint()
+        textPaint.color = Color.GRAY
+        textPaint.style = Paint.Style.FILL
+        textPaint.flags = Paint.ANTI_ALIAS_FLAG
+        textPaint.textSize = bitmap.width / 20F
+
+        val topRect = RectF(rect)
+        topRect.bottom = rect.top.toFloat()
+
+        val bounds = Rect()
+        textPaint.getTextBounds(containerNumber, 0, containerNumber.length, bounds)
+        val height = bounds.height()
+        val width = bounds.width()
+        topRect.top = topRect.top - height - topRect.width() / 10
+        topRect.right = width + topRect.left + topRect.width() / 10
+        if (topRect.right > bitmap.width){
+            val delta = topRect.right - bitmap.width
+            topRect.left -= delta
+            topRect.right -= delta
+        }
+        if (topRect.left < 0){
+            topRect.left = 0F
+            topRect.right -= topRect.left
+        }
+
+        canvas.drawRect(topRect, textPaint)
+
+        textPaint.color = Color.WHITE
+        textPaint.strokeWidth = 1F
+        textPaint.textAlign = Paint.Align.CENTER
+
+        val xPos = topRect.left + topRect.width() / 2
+        val yPos = topRect.top + topRect.height() / 2 - (textPaint.descent() + textPaint.ascent()) / 2
+        canvas.drawText(containerNumber, xPos, yPos, textPaint)
+//        canvas.drawText(containerNumber, rect.left.toFloat(), rect.top.toFloat(), textPaint)
         return tempBitmap
     }
 
