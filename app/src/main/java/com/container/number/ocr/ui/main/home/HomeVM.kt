@@ -4,6 +4,7 @@ import android.R.string
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import android.view.View
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -11,11 +12,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.container.number.ocr.db.AppDatabase
 import com.container.number.ocr.extension.logcat
+import com.container.number.ocr.model.data.Event
 import com.container.number.ocr.model.data.Resource
 import com.container.number.ocr.model.entity.PhotoOcr
 import com.container.number.ocr.model.type.Evaluate
 import com.container.number.ocr.utils.BitmapUtils
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
@@ -107,6 +110,46 @@ class HomeVM : ViewModel() {
                 }
             }
         }
+    }
+
+
+    private val _savingScreenShot = MutableLiveData<Resource<Boolean>>()
+    val savingScreenShot: LiveData<Resource<Boolean>> get() = _savingScreenShot
+
+    fun saveScreenShot(context: Context, photoUri: Uri, view: View) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _savingScreenShot.postValue(Resource.loading())
+            delay(200L)
+            DocumentFile.fromTreeUri(context, photoUri)?.let { documentFile ->
+                try {
+                    var exportFolder = checkIfExportFolderExist(documentFile)
+                    if (exportFolder == null)
+                        exportFolder = documentFile.createDirectory("export")
+
+                    val itemName = DocumentFile.fromSingleUri(context, photoUri)?.name
+                        ?: "export_${System.currentTimeMillis()}.jpeg"
+
+                    exportFolder?.let {
+                        val cloneFile =
+                            exportFolder.listFiles().find { it.isFile && it.name == itemName }
+                                ?: exportFolder.createFile("image/jpeg", itemName)
+                        val outputStream = context.contentResolver.openOutputStream(cloneFile!!.uri)
+                        val bitmap = BitmapUtils.captureView(view)
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+                        outputStream?.flush()
+                        outputStream?.close()
+                    }
+                    _savingScreenShot.postValue(Resource.success(true))
+                } catch (ex: Exception) {
+                    ex.printStackTrace()
+                    _savingScreenShot.postValue(Resource.error(ex))
+                }
+            } ?: _savingScreenShot.postValue(Resource.success(true))
+        }
+    }
+
+    private fun checkIfExportFolderExist(documentFile: DocumentFile): DocumentFile? {
+        return documentFile.listFiles().find { it.isDirectory && it.name == "export" }
     }
 
     data class OcrProgress(

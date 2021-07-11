@@ -183,10 +183,12 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
                 .toTypedArray()) { dialog, which ->
                 val evaluate = selectList[which]
                 viewModel.saveEvaluate(requireContext(), getPhotoUri(), evaluate, (requireActivity() as MainActivity).currentAlgorithm)
+
                 binding?.apply {
                     btnEvaluate.text = getString(evaluate.resId)
                     btnEvaluate.backgroundTintList = ColorStateList.valueOf(Color.GRAY)
                 }
+                (requireActivity() as MainActivity).saveScreenShot(getPhotoUri())
             }
             .show()
     }

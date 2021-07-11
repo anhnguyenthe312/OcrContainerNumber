@@ -13,8 +13,10 @@ import com.container.number.ocr.R
 import com.container.number.ocr.constant.Constants
 import com.container.number.ocr.databinding.FragmentHomeBinding
 import com.container.number.ocr.extension.logcat
+import com.container.number.ocr.model.data.Resource
 import com.container.number.ocr.ui.main.home.adapter.HomeAdapter
 import com.container.number.ocr.ui.main.start.StartFragment
+import com.container.number.ocr.utils.BitmapUtils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class HomeFragment : Fragment() {
@@ -82,44 +84,22 @@ class HomeFragment : Fragment() {
             }
         })
 
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        menu.findItem(R.id.export).isVisible = true
-        super.onPrepareOptionsMenu(menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.export -> {
-                openDirectory()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-
-    }
-
-    private fun openDirectory() {
-        // Choose a directory using the system's file picker.
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-        startActivityForResult(intent, REQUEST_CODE)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CODE
-            && resultCode == Activity.RESULT_OK
-        ) {
-            // The result data contains a URI for the document or directory that
-            // the user selected.
-            data?.data?.also { uri ->
-                // Perform operations on the document using its URI.
-                DocumentFile.fromTreeUri(requireContext(), uri)?.apply {
-                    viewModel.export(requireContext(), uri)
+        viewModel.savingScreenShot.observe(viewLifecycleOwner, {
+            binding?.apply {
+                when(it.status){
+                    Resource.Status.SUCCESS -> homeViewPager.isUserInputEnabled = true
+                    Resource.Status.ERROR -> homeViewPager.isUserInputEnabled = true
+                    Resource.Status.LOADING -> homeViewPager.isUserInputEnabled = false
                 }
-
             }
+
+        })
+
+    }
+
+    fun takeScreenShot(photoUri: Uri) {
+        binding?.apply {
+            viewModel.saveScreenShot(requireContext(), photoUri, root)
         }
     }
 
