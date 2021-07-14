@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.view.View
+import android.widget.Toast
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -129,7 +130,7 @@ class HomeVM : ViewModel() {
                     val itemName = DocumentFile.fromSingleUri(context, photoUri)?.name
                         ?: "export_${System.currentTimeMillis()}.jpeg"
 
-                    exportFolder?.let {
+                    if (exportFolder != null) {
                         var cloneFile = exportFolder.listFiles().find { it.isFile && it.name == itemName }
                         cloneFile?.delete()
                         cloneFile = exportFolder.createFile("image/jpeg", itemName)
@@ -137,6 +138,9 @@ class HomeVM : ViewModel() {
                         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
                         outputStream?.flush()
                         outputStream?.close()
+                    }
+                    else{
+                        Toast.makeText(context, "can't get export folder", Toast.LENGTH_SHORT).show()
                     }
                     _savingScreenShot.postValue(Resource.success(true))
                 } catch (ex: Exception) {

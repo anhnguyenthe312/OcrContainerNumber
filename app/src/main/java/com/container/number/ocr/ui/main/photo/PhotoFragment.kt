@@ -170,6 +170,7 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
                 btnEvaluate.tag?.let {
                     btnEvaluate.showProgress{
                         this.progressColor = Color.WHITE
+                        this.buttonText = "Saving"
                     }
                 }
             }
