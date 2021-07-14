@@ -116,7 +116,7 @@ class HomeVM : ViewModel() {
     private val _savingScreenShot = MutableLiveData<Resource<Boolean>>()
     val savingScreenShot: LiveData<Resource<Boolean>> get() = _savingScreenShot
 
-    fun saveScreenShot(context: Context, photoUri: Uri, view: View) {
+    fun saveScreenShot(context: Context, photoUri: Uri, bitmap: Bitmap) {
         viewModelScope.launch(Dispatchers.IO) {
             _savingScreenShot.postValue(Resource.loading())
             delay(200L)
@@ -130,11 +130,10 @@ class HomeVM : ViewModel() {
                         ?: "export_${System.currentTimeMillis()}.jpeg"
 
                     exportFolder?.let {
-                        val cloneFile =
-                            exportFolder.listFiles().find { it.isFile && it.name == itemName }
-                                ?: exportFolder.createFile("image/jpeg", itemName)
+                        var cloneFile = exportFolder.listFiles().find { it.isFile && it.name == itemName }
+                        cloneFile?.delete()
+                        cloneFile = exportFolder.createFile("image/jpeg", itemName)
                         val outputStream = context.contentResolver.openOutputStream(cloneFile!!.uri)
-                        val bitmap = BitmapUtils.captureView(view)
                         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
                         outputStream?.flush()
                         outputStream?.close()

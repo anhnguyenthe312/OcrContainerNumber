@@ -45,6 +45,10 @@ class PhotoVM : ViewModel() {
 
     private var savedDrawRect: Rect? = null
 
+    var currentAlgorithm: OcrAlgorithm = OcrAlgorithm.OneLine
+
+    val saveDbSuccess: MutableLiveData<Event<Boolean>> = MutableLiveData()
+
     fun loadPhotoFromUri(context: Context, photoUri: Uri) {
         viewModelScope.launch {
             _originalBitmapEvent.postValue(Event(Resource.loading()))
@@ -116,6 +120,7 @@ class PhotoVM : ViewModel() {
                 this.algorithm = algorithm
             }
             AppDatabase.buildDatabase(context).photoOcrDao().insert(photoOcr)
+            saveDbSuccess.postValue(Event(true))
         }
 
     }

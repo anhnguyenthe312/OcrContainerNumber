@@ -7,13 +7,17 @@ import android.os.Bundle
 import android.view.*
 import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import com.container.number.ocr.R
 import com.container.number.ocr.constant.Constants
 import com.container.number.ocr.databinding.FragmentHomeBinding
 import com.container.number.ocr.extension.logcat
+import com.container.number.ocr.model.data.Event
+import com.container.number.ocr.model.data.EventObserver
 import com.container.number.ocr.model.data.Resource
+import com.container.number.ocr.ui.main.MainActivityVM
 import com.container.number.ocr.ui.main.home.adapter.HomeAdapter
 import com.container.number.ocr.ui.main.start.StartFragment
 import com.container.number.ocr.utils.BitmapUtils
@@ -31,6 +35,7 @@ class HomeFragment : Fragment() {
 
     private lateinit var viewModel: HomeVM
     private var binding: FragmentHomeBinding? = null
+    private val activityVM: MainActivityVM by activityViewModels<MainActivityVM>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,21 +91,28 @@ class HomeFragment : Fragment() {
 
         viewModel.savingScreenShot.observe(viewLifecycleOwner, {
             binding?.apply {
-                when(it.status){
-                    Resource.Status.SUCCESS -> homeViewPager.isUserInputEnabled = true
-                    Resource.Status.ERROR -> homeViewPager.isUserInputEnabled = true
+                when (it.status) {
+                    Resource.Status.SUCCESS -> {
+                        homeViewPager.isUserInputEnabled = true
+                        activityVM.endScreenShot.postValue(true)
+                    }
+                    Resource.Status.ERROR -> {
+                        homeViewPager.isUserInputEnabled = true
+                        activityVM.endScreenShot.postValue(true)
+                    }
                     Resource.Status.LOADING -> homeViewPager.isUserInputEnabled = false
                 }
             }
+        })
 
+        activityVM.startScreenShot.observe(viewLifecycleOwner, EventObserver{
+            binding?.apply {
+                val bitmap = BitmapUtils.captureView(root)
+                viewModel.saveScreenShot(requireContext(), it, bitmap)
+            }
         })
 
     }
 
-    fun takeScreenShot(photoUri: Uri) {
-        binding?.apply {
-            viewModel.saveScreenShot(requireContext(), photoUri, root)
-        }
-    }
 
 }

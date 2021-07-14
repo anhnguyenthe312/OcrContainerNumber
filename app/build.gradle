@@ -80,5 +80,8 @@ dependencies {
     // ML-kit
     implementation "com.google.android.gms:play-services-mlkit-text-recognition:$google_mlkit"
 
+    //progress button
+    implementation "com.github.razir.progressbutton:progressbutton:2.1.0"
+
 
 }
