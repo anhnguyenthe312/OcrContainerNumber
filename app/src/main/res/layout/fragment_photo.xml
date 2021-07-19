@@ -9,8 +9,8 @@
         android:id="@+id/ivPhoto"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/txtContainerNumber"
         android:layout_marginBottom="5dp"
+        app:layout_constraintBottom_toTopOf="@id/txtContainerNumber"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -44,34 +44,40 @@
 
     <Button
         android:id="@+id/btnEvaluate"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textSize="13sp"
-        android:text="Evaluate"
         android:lines="1"
-        app:layout_constraintTop_toTopOf="@id/viewContainerMode"
+        android:text="Evaluate"
+        android:textSize="13sp"
+        app:autoSizeMaxTextSize="16sp"
+        app:autoSizeMinTextSize="9sp"
+        app:autoSizeTextType="uniform"
         app:layout_constraintBottom_toBottomOf="@id/viewContainerMode"
         app:layout_constraintEnd_toStartOf="@id/viewContainerMode"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/viewContainerMode"
+        app:layout_constraintWidth_percent="0.35" />
 
-<!--    <Button-->
-<!--        android:id="@+id/btnReOCr"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:text="Re-Analyze"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toEndOf="@id/btnEvaluate" />-->
+    <!--    <Button-->
+    <!--        android:id="@+id/btnReOCr"-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:text="Re-Analyze"-->
+    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
+    <!--        app:layout_constraintEnd_toEndOf="parent"-->
+    <!--        app:layout_constraintStart_toEndOf="@id/btnEvaluate" />-->
 
     <LinearLayout
         android:id="@+id/viewContainerMode"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:layout_marginBottom="2dp"
+        android:gravity="center"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btnEvaluate">
+        app:layout_constraintStart_toEndOf="@id/btnEvaluate"
+        app:layout_constraintWidth_percent="0.5">
 
         <ImageView
             android:id="@+id/ivContainerMode"
@@ -82,12 +88,14 @@
 
         <TextView
             android:id="@+id/txtContainerModeName"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginStart="2dp"
             android:text="@string/Container_number_in_one_line"
             android:textColor="@color/black"
-            android:textSize="13sp" />
+            app:autoSizeMaxTextSize="16sp"
+            app:autoSizeMinTextSize="9sp"
+            app:autoSizeTextType="uniform" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
