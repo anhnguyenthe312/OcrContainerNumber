@@ -10,6 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/txtContainerNumber"
+        android:layout_marginBottom="5dp"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -31,8 +32,7 @@
         android:id="@+id/txtContainerNumber"
         android:layout_width="0dp"
         android:layout_height="25dp"
-        android:layout_marginTop="3dp"
-        android:layout_marginEnd="5dp"
+
         android:gravity="center"
         android:textAllCaps="true"
         android:textColor="#000"
@@ -46,8 +46,11 @@
         android:id="@+id/btnEvaluate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textSize="13sp"
         android:text="Evaluate"
+        android:lines="1"
         app:layout_constraintTop_toTopOf="@id/viewContainerMode"
+        app:layout_constraintBottom_toBottomOf="@id/viewContainerMode"
         app:layout_constraintEnd_toStartOf="@id/viewContainerMode"
         app:layout_constraintStart_toStartOf="parent" />
 
@@ -72,8 +75,8 @@
 
         <ImageView
             android:id="@+id/ivContainerMode"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
             android:layout_gravity="center"
             android:src="@drawable/ic_container_horizontal" />
 
@@ -85,6 +88,6 @@
             android:layout_marginStart="2dp"
             android:text="@string/Container_number_in_one_line"
             android:textColor="@color/black"
-            android:textSize="16sp" />
+            android:textSize="13sp" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
