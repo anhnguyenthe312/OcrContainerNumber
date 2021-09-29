@@ -4,6 +4,8 @@ import android.graphics.Rect
 import com.google.mlkit.vision.text.Text
 import com.container.number.ocr.extension.isNumber
 import com.container.number.ocr.extension.logcat
+import java.util.*
+import kotlin.collections.HashMap
 import kotlin.math.max
 import kotlin.math.pow
 
@@ -24,12 +26,12 @@ object ContainerNumberUtils {
 
     fun getCheckDigit(containerNumber: String): Int {
         val containerNumberToCheck =
-            if (containerNumber.length == CONTAINER_NUMBER_LENGTH) containerNumber.substring(
+            (if (containerNumber.length == CONTAINER_NUMBER_LENGTH) containerNumber.substring(
                 containerNumber.length - 1
-            ) else containerNumber
+            ) else containerNumber)
         when {
             containerNumberToCheck.length != CONTAINER_NUMBER_LENGTH - 1 -> return -1
-            containerNumberToCheck[3] !in arrayOf('U', 'I', 'Z') -> return -1
+            containerNumberToCheck[3] !in arrayOf('U', 'J', 'Z') -> return -1
             containerNumberToCheck.substring(0, 2).any { it.isLowerCase() } -> return -1
             containerNumberToCheck.substring(4).any { !it.isDigit() } -> return -1
         }
@@ -98,7 +100,19 @@ object ContainerNumberUtils {
         } else Pair(false, -1)
     }
 
-    fun getContainerNumberVertical(visionText: Text): Pair<String, Rect> {
+    fun verifyDigitWithoutDigit(ContainerNumberWithoutDigit: String): Pair<Boolean, Int> {
+        return if (ContainerNumberWithoutDigit.length == CONTAINER_NUMBER_LENGTH - 1) {
+            val firstWord = ContainerNumberWithoutDigit.substring(0, 4)
+            val secondWord = ContainerNumberWithoutDigit.substring(4, CONTAINER_NUMBER_LENGTH - 1)
+            verifyDigit(firstWord, secondWord)
+        } else Pair(false, -1)
+    }
+
+    private fun isValidBICCode(text: String): Boolean {
+        return text.length == 4 && text[3] in arrayOf('U', 'J', 'Z')
+    }
+
+    fun getContainerNumberVertical(visionText: Text, type: BoundRectType): Pair<String, Rect> {
         var containerNumber = ""
         var rect = Rect()
         run breaker@{
@@ -106,65 +120,75 @@ object ContainerNumberUtils {
         }
         return Pair(containerNumber, rect)
     }
-    fun getContainerNumber2Line(visionText: Text): Pair<String, Rect> {
+
+    fun getContainerNumber2Line(visionText: Text, type: BoundRectType): Pair<String, Rect> {
         var containerNumber = ""
         var rect = Rect()
         run breaker@{
-            val linesToCheck = arrayListOf<Text.Line>()
-            visionText.textBlocks.forEachIndexed { index, textBlock ->
-                if (textBlock.lines.size == 1 && textBlock.text.trim().length == 4 && index < visionText.textBlocks.size - 1) {
-                    linesToCheck.addAll(textBlock.lines)
-                    linesToCheck.addAll(visionText.textBlocks[index + 1].lines)
-                }
 
-                if (textBlock.lines.size >= 2) {
-                    linesToCheck.addAll(textBlock.lines)
+            // Build List of Candidate list
+            // With each item is a list that have first item isValidBICCode
+            val blockCandidateList = arrayListOf<List<Text.Element>>()
+            visionText.textBlocks.forEachIndexed textBlock@{ index, textBlock ->
+                if (textBlock.lines.size > 0
+                    && isValidBICCode(textBlock.lines[0].text.trim().toUpperCase())
+                ) {
+                    val listWord = arrayListOf<Text.Element>()
+                    var checkLength = 0
+                    textBlock.lines.forEach { line ->
+                        listWord.addAll(line.elements)
+                        checkLength += line.elements.sumBy { ele -> ele.text.trim().length }
+                    }
+
+                    // not enough length then check nearby TextBlock to add more word
+                    if (checkLength < CONTAINER_NUMBER_LENGTH - 1) {
+                        for (i in index + 1 until visionText.textBlocks.size) {
+                            val block = visionText.textBlocks[i]
+                            block.lines.forEach { line ->
+                                listWord.addAll(line.elements)
+                                checkLength += line.elements.sumBy { ele -> ele.text.trim().length }
+                            }
+                            if (checkLength >= CONTAINER_NUMBER_LENGTH - 1) {
+                                blockCandidateList.add(listWord)
+                                break
+                            }
+                        }
+                    } else blockCandidateList.add(listWord)
                 }
             }
 
-            for (i in 0 until linesToCheck.size - 1) {
-                val firstLine = linesToCheck[i]
-                val secondLine = linesToCheck[i + 1]
-                val firstLineStr = firstLine.text.trim()
-                if (firstLineStr.length == 4) {
-                    logcat("first line : $firstLineStr")
-
-                    //check second line
-                    var listCandidate = getCandidateWordsByLength(secondLine, 7)
-                    listCandidate.forEach { list ->
-                        val secondLineStr =
-                            list.joinToString(separator = "") { it.text }
-                        if (verifyDigit(firstLine.text + secondLineStr)) {
-                            containerNumber = firstLine.text + secondLineStr
-                            rect = getBoundRect(
-                                listOf(
-                                    firstLine.boundingBox,
-                                    secondLine.boundingBox,
-                                    null
-                                )
-                            )
-                            return@breaker
-                        }
+            //Verify that item have container number chain in this
+            blockCandidateList.forEach { listWord ->
+                var listCandidate = getCandidateWordListByLength(listWord, CONTAINER_NUMBER_LENGTH)
+                if (listCandidate.isNotEmpty()) {
+                    val lineStr =
+                        listCandidate.joinToString(separator = "") { word -> word.text.trim() }
+                    logcat("Candidate: $lineStr")
+                    if (verifyDigit(lineStr)) {
+                        containerNumber = lineStr
+                        rect = getBound(
+                            type,
+                            listCandidate.map { it.boundingBox }
+                        )
+                        return@breaker
                     }
+                }
 
-                    // there is a case that last digit number cannot recognize because of rectangle over it
-                    listCandidate = getCandidateWordsByLength(secondLine, 6)
-                    listCandidate.forEach { list ->
-                        val secondLineStr =
-                            list.joinToString(separator = "") { it.text }
-                        val pair = verifyDigit(firstLine.text, secondLineStr)
-                        if (pair.first) {
-                            containerNumber =
-                                firstLine.text + secondLineStr + pair.second
-                            rect = getBoundRect(
-                                listOf(
-                                    firstLine.boundingBox,
-                                    secondLine.boundingBox,
-                                    null
-                                )
-                            )
-                            return@breaker
-                        }
+                // there is a case that last digit number cannot recognize because of rectangle over it
+                listCandidate = getCandidateWordListByLength(listWord, CONTAINER_NUMBER_LENGTH - 1)
+                if (listCandidate.isNotEmpty()) {
+                    val firstLineStr = listCandidate[0].text
+                    val secondLineStr =
+                        listCandidate.subList(1, listCandidate.size).joinToString(separator = "") { word -> word.text.trim() }
+                    logcat("Candidate: $firstLineStr $secondLineStr + ?")
+                    val pair = verifyDigit(firstLineStr, secondLineStr)
+                    if (pair.first) {
+                        containerNumber = "$firstLineStr$secondLineStr${pair.second}"
+                        rect = getBound(
+                            type,
+                            listCandidate.map { it.boundingBox }
+                        )
+                        return@breaker
                     }
                 }
             }
@@ -172,7 +196,7 @@ object ContainerNumberUtils {
         return Pair(containerNumber, rect)
     }
 
-    fun getContainerNumber(visionText: Text): Pair<String, Rect> {
+    fun getContainerNumber(visionText: Text, type: BoundRectType): Pair<String, Rect> {
         var containerNumber = ""
         var rect = Rect()
         run breaker@{
@@ -181,7 +205,9 @@ object ContainerNumberUtils {
                     // check if line is a container number
                     if (verifyDigit(line.text.trim())) {
                         containerNumber = line.text
-                        rect = getBoundRect(
+                        rect = getBound(
+                            type,
+
                             listOf(
                                 line.boundingBox,
                                 null,
@@ -191,50 +217,42 @@ object ContainerNumberUtils {
                         return@breaker
                     }
 
-                    //check if three word in a row is a container number
-                    if (line.elements.size >= 3) {
-                        for (i in 0 until line.elements.size - 2) {
-                            if (verifyDigit(
-                                    line.elements[i].text.trim(),
-                                    line.elements[i + 1].text.trim(),
-                                    line.elements[i + 2].text.trim()
-                                )
-                            ) {
-                                containerNumber = line.elements[i].text.trim() +
-                                        line.elements[i + 1].text.trim() +
-                                        line.elements[i + 2].text.trim()
-                                rect = getBoundRect(
-                                    listOf(
-                                        line.elements[i].boundingBox,
-                                        line.elements[i + 1].boundingBox,
-                                        line.elements[i + 2].boundingBox
-                                    )
-                                )
-                                return@breaker
+                    var listCandidate = getCandidateByLength(line.elements, CONTAINER_NUMBER_LENGTH)
+                    if (listCandidate.isNotEmpty()) {
+                        val lineStr =
+                            listCandidate.joinToString(separator = "") { list ->
+                                list.joinToString(
+                                    separator = ""
+                                ) { word -> word.text.trim() }
                             }
+                        logcat("Candidate: $lineStr")
+                        if (verifyDigit(lineStr)) {
+                            containerNumber = lineStr
+                            rect = getBound(
+                                type,
+                                listCandidate.flatMap { list -> list.map { it.boundingBox } }
+                            )
+                            return@breaker
                         }
                     }
 
-                    //there is a case that last digit number cannot recognize because of rectangle over it, check only 2 word
-                    if (line.elements.size >= 2) {
-                        for (i in 0 until line.elements.size - 1) {
-                            val pair = verifyDigit(
-                                line.elements[i].text.trim(),
-                                line.elements[i + 1].text.trim()
-                            )
-                            if (pair.first) {
-                                containerNumber = line.elements[i].text.trim() +
-                                        line.elements[i + 1].text.trim() +
-                                        pair.second
-                                rect = getBoundRect(
-                                    listOf(
-                                        line.elements[i].boundingBox,
-                                        line.elements[i + 1].boundingBox,
-                                        null
-                                    )
-                                )
-                                return@breaker
+                    listCandidate = getCandidateByLength(line.elements, CONTAINER_NUMBER_LENGTH - 1)
+                    if (listCandidate.isNotEmpty()) {
+                        val lineStr =
+                            listCandidate.joinToString(separator = "") { list ->
+                                list.joinToString(
+                                    separator = ""
+                                ) { word -> word.text.trim() }
                             }
+                        logcat("Candidate: $lineStr ?")
+                        val pair = verifyDigitWithoutDigit(lineStr)
+                        if (pair.first) {
+                            containerNumber = lineStr + pair.second
+                            rect = getBound(
+                                type,
+                                listCandidate.flatMap { list -> list.map { it.boundingBox } }
+                            )
+                            return@breaker
                         }
                     }
                 }
@@ -243,24 +261,25 @@ object ContainerNumberUtils {
         return Pair(containerNumber, rect)
     }
 
-    private fun getCandidateWordsByLength(
+    private fun getCandidateWordListByLength(
         list: List<Text.Element>,
         candidateLength: Int
     ): List<Text.Element> {
         if (candidateLength <= 0) return emptyList()
         if (list.isEmpty()) return emptyList()
         val element = list[0]
+        val elementText = element.text.trim()
         return when {
-            element.text.trim().length > candidateLength -> emptyList()
-            element.text.trim().length < candidateLength -> {
+            elementText.length > candidateLength -> emptyList()
+            elementText.length < candidateLength -> {
                 if (list.size > 1) {
-                    val arr = getCandidateWordsByLength(
+                    val arr = getCandidateWordListByLength(
                         list.subList(1, list.size),
-                        candidateLength - element.text.trim().length
+                        candidateLength - elementText.length
                     )
                     if (arr.isNotEmpty()) {
                         arrayListOf<Text.Element>().apply {
-                            add(element)
+                            if (elementText.isNotEmpty()) add(element)
                             addAll(arr)
                         }
                     } else emptyList()
@@ -271,22 +290,22 @@ object ContainerNumberUtils {
         }
     }
 
-    private fun getCandidateWordsByLength(
-        line: Text.Line,
+    private fun getCandidateByLength(
+        listWord: List<Text.Element>,
         candidateLength: Int
     ): List<List<Text.Element>> {
         val arr = arrayListOf<List<Text.Element>>()
-        for (i in line.elements.indices) {
-            val list = getCandidateWordsByLength(
-                line.elements.subList(i, line.elements.size),
+        for (i in listWord.indices) {
+            val candidateList = getCandidateWordListByLength(
+                listWord.subList(i, listWord.size),
                 candidateLength
             )
-            if (list.isNotEmpty()) arr.add(list)
+            if (candidateList.isNotEmpty()) arr.add(candidateList)
         }
         return arr
     }
 
-    private fun getBoundRect(rectList: List<Rect?>): Rect {
+    private fun getBound(boundRectType: BoundRectType, rectList: List<Rect?>): Rect {
         val listOfRect: List<Rect> = rectList.filterNotNull()
         var minLeft = if (listOfRect.isEmpty()) 0 else listOfRect.minOf { it.left }
         var minTop = if (listOfRect.isEmpty()) 0 else listOfRect.minOf { it.top }
@@ -295,10 +314,29 @@ object ContainerNumberUtils {
         val width = maxRight - minLeft
         val height = maxBottom - minTop
 
-        minLeft -= width / 20
-        minTop -= height / 20
-        maxRight += width / 20
-        maxBottom += height / 20
+        when (boundRectType) {
+            BoundRectType.SQUARE -> {
+                var size = max(width, height)
+                size = (1.3f * size).toInt()
+                minLeft = minLeft + width / 2 - size / 2
+                minTop = minTop + height / 2 - size / 2
+                maxRight = minLeft + if (listOfRect.size == 2) (1.2f * size).toInt() else size
+                maxBottom = minTop + if (listOfRect.size == 2) (1.2f * size).toInt() else size
+            }
+            BoundRectType.CORRECT_BOUND -> {
+                minLeft -= width / 20
+                minTop -= height / 20
+                maxRight += width / 20
+                maxBottom += height / 20
+            }
+        }
+
         return Rect(minLeft, minTop, maxRight, maxBottom)
+    }
+
+
+    enum class BoundRectType {
+        SQUARE,
+        CORRECT_BOUND
     }
 }

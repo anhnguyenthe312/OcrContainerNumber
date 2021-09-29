@@ -85,9 +85,9 @@ class PhotoVM : ViewModel() {
                 //recognize container number
                 val (containerNumber, rect) =
                     when(ocrAlgorithm){
-                        OcrAlgorithm.OneLine -> ContainerNumberUtils.getContainerNumber(text)
-                        OcrAlgorithm.TwoLine -> ContainerNumberUtils.getContainerNumber2Line(text)
-                        OcrAlgorithm.Vertical -> ContainerNumberUtils.getContainerNumberVertical(text)
+                        OcrAlgorithm.OneLine -> ContainerNumberUtils.getContainerNumber(text, ContainerNumberUtils.BoundRectType.CORRECT_BOUND)
+                        OcrAlgorithm.TwoLine -> ContainerNumberUtils.getContainerNumber2Line(text, ContainerNumberUtils.BoundRectType.CORRECT_BOUND)
+                        OcrAlgorithm.Vertical -> ContainerNumberUtils.getContainerNumberVertical(text, ContainerNumberUtils.BoundRectType.CORRECT_BOUND)
                     }
                 if (containerNumber.isNotEmpty()){
                     _containerNumberLiveData.postValue(Event(containerNumber))
