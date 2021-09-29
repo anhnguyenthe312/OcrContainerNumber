@@ -177,13 +177,12 @@ object ContainerNumberUtils {
                 // there is a case that last digit number cannot recognize because of rectangle over it
                 listCandidate = getCandidateWordListByLength(listWord, CONTAINER_NUMBER_LENGTH - 1)
                 if (listCandidate.isNotEmpty()) {
-                    val firstLineStr = listCandidate[0].text
-                    val secondLineStr =
-                        listCandidate.subList(1, listCandidate.size).joinToString(separator = "") { word -> word.text.trim() }
-                    logcat("Candidate: $firstLineStr $secondLineStr + ?")
-                    val pair = verifyDigit(firstLineStr, secondLineStr)
+                    val lineStr =
+                        listCandidate.joinToString(separator = "") { word -> word.text.trim() }
+                    logcat("Candidate: $lineStr + ?")
+                    val pair = verifyDigitWithoutDigit(lineStr)
                     if (pair.first) {
-                        containerNumber = "$firstLineStr$secondLineStr${pair.second}"
+                        containerNumber = lineStr + pair.second
                         rect = getBound(
                             type,
                             listCandidate.map { it.boundingBox }
@@ -218,39 +217,35 @@ object ContainerNumberUtils {
                     }
 
                     var listCandidate = getCandidateByLength(line.elements, CONTAINER_NUMBER_LENGTH)
-                    if (listCandidate.isNotEmpty()) {
-                        val lineStr =
-                            listCandidate.joinToString(separator = "") { list ->
-                                list.joinToString(
-                                    separator = ""
-                                ) { word -> word.text.trim() }
-                            }
+                    listCandidate.forEach { itemList ->
+                        val lineStr = itemList.joinToString(
+                            separator = ""
+                        ) { word -> word.text.trim() }
+
                         logcat("Candidate: $lineStr")
                         if (verifyDigit(lineStr)) {
                             containerNumber = lineStr
                             rect = getBound(
                                 type,
-                                listCandidate.flatMap { list -> list.map { it.boundingBox } }
+                                itemList.map { it.boundingBox }
                             )
                             return@breaker
                         }
                     }
 
                     listCandidate = getCandidateByLength(line.elements, CONTAINER_NUMBER_LENGTH - 1)
-                    if (listCandidate.isNotEmpty()) {
-                        val lineStr =
-                            listCandidate.joinToString(separator = "") { list ->
-                                list.joinToString(
-                                    separator = ""
-                                ) { word -> word.text.trim() }
-                            }
+                    listCandidate.forEach { itemList ->
+                        val lineStr = itemList.joinToString(
+                            separator = ""
+                        ) { word -> word.text.trim() }
+
                         logcat("Candidate: $lineStr ?")
                         val pair = verifyDigitWithoutDigit(lineStr)
                         if (pair.first) {
                             containerNumber = lineStr + pair.second
                             rect = getBound(
                                 type,
-                                listCandidate.flatMap { list -> list.map { it.boundingBox } }
+                                itemList.map { it.boundingBox }
                             )
                             return@breaker
                         }
@@ -279,7 +274,7 @@ object ContainerNumberUtils {
                     )
                     if (arr.isNotEmpty()) {
                         arrayListOf<Text.Element>().apply {
-                            if (elementText.isNotEmpty()) add(element)
+                            add(element)
                             addAll(arr)
                         }
                     } else emptyList()
