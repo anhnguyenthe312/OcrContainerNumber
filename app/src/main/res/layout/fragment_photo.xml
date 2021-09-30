@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginBottom="5dp"
-        app:layout_constraintBottom_toTopOf="@id/txtAllText"
+        app:layout_constraintBottom_toTopOf="@id/scroll"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -28,10 +28,16 @@
         app:layout_constraintEnd_toStartOf="@id/txtContainerNumber"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <View
+        app:layout_constraintTop_toTopOf="@id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="1px"
+        android:background="#000"
+        />
     <ScrollView
         android:id="@+id/scroll"
         android:layout_width="match_parent"
-        android:layout_height="70dp"
+        android:layout_height="100dp"
         app:layout_constraintBottom_toTopOf="@id/txtLabel"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -45,9 +51,8 @@
                 android:id="@+id/txtAllText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
                 android:scrollbars="vertical"
-                android:textAllCaps="true"
+                android:textAllCaps="false"
                 android:textColor="#000"
                 android:textSize="16sp" />
         </LinearLayout>

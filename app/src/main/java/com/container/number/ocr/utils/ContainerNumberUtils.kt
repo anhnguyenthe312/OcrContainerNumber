@@ -12,6 +12,12 @@ import kotlin.math.pow
 object ContainerNumberUtils {
 
     const val CONTAINER_NUMBER_LENGTH = 11
+    private const val OWNER_LENGTH = 3
+    private const val OWNER_CATEGORY_LENGTH = 4
+    private const val SERIAL_NUMBER_LENGTH = 6
+    private const val CHECK_DIGIT_LENGTH = 1
+    private const val CATEGORY_POSITION = 3
+    private val ISO_CATEGORIES = arrayOf('U', 'J', 'Z')
 
     // XXXUDDDDDDDC, where XXX - owner code; U - category identifier; DDDDDD - six digits serial number, C - check digit
     //
@@ -30,10 +36,12 @@ object ContainerNumberUtils {
                 containerNumber.length - 1
             ) else containerNumber)
         when {
-            containerNumberToCheck.length != CONTAINER_NUMBER_LENGTH - 1 -> return -1
-            containerNumberToCheck[3] !in arrayOf('U', 'J', 'Z') -> return -1
-            containerNumberToCheck.substring(0, 2).any { it.isLowerCase() } -> return -1
-            containerNumberToCheck.substring(4).any { !it.isDigit() } -> return -1
+            containerNumberToCheck.length != CONTAINER_NUMBER_LENGTH - CHECK_DIGIT_LENGTH -> return -1
+            containerNumberToCheck[CATEGORY_POSITION] !in ISO_CATEGORIES -> return -1
+            containerNumberToCheck.substring(0, CATEGORY_POSITION - 1)
+                .any { it.isLowerCase() } -> return -1
+            containerNumberToCheck.substring(CATEGORY_POSITION + 1)
+                .any { !it.isDigit() } -> return -1
         }
 
         val equivalentNumericalValues: MutableMap<Char, Int> = HashMap()
@@ -61,12 +69,13 @@ object ContainerNumberUtils {
 
     fun verifyDigit(fullContainerNumber: String): Boolean {
         // Get the last number of the container number which is the check digit.
-        val lastChar = fullContainerNumber.substring(fullContainerNumber.length - 1)
+        val lastChar =
+            fullContainerNumber.substring(fullContainerNumber.length - CHECK_DIGIT_LENGTH)
         return if (lastChar.isNumber()) {
             val checkDigitToVerify = lastChar.toInt()
             // Get rid of the last number, the last number is the check digit where we want to generated in order to validate.
             val containerNumberToCheck =
-                fullContainerNumber.substring(0, fullContainerNumber.length - 1)
+                fullContainerNumber.substring(0, fullContainerNumber.length - CHECK_DIGIT_LENGTH)
             checkDigitToVerify == getCheckDigit(containerNumberToCheck)
         } else false
     }
@@ -78,7 +87,7 @@ object ContainerNumberUtils {
         checkDigit: String
     ): Boolean {
         // checkDigit is valid
-        return if (checkDigit.length == 1 && checkDigit.isNumber()) {
+        return if (checkDigit.length == CHECK_DIGIT_LENGTH && checkDigit.isNumber()) {
             val checkDigitToVerify = checkDigit.toInt()
 
             val containerNumberToCheck = "$ownerPrefix$equipmentIdentifier$serialNumber"
@@ -87,13 +96,18 @@ object ContainerNumberUtils {
     }
 
     fun verifyDigit(firstWord: String, secondWord: String, thirdWord: String): Boolean {
-        return if (firstWord.length == 4 && secondWord.length == 6 && thirdWord.length == 1) {
-            verifyDigit(firstWord.substring(0, 3), firstWord.substring(3), secondWord, thirdWord)
+        return if (firstWord.length == OWNER_CATEGORY_LENGTH && secondWord.length == SERIAL_NUMBER_LENGTH && thirdWord.length == CHECK_DIGIT_LENGTH) {
+            verifyDigit(
+                firstWord.substring(0, CATEGORY_POSITION),
+                firstWord.substring(CATEGORY_POSITION),
+                secondWord,
+                thirdWord
+            )
         } else false
     }
 
     fun verifyDigit(firstWord: String, secondWord: String): Pair<Boolean, Int> {
-        return if (firstWord.length == 4 && secondWord.length == 6 && secondWord.isNumber()) {
+        return if (firstWord.length == OWNER_CATEGORY_LENGTH && secondWord.length == SERIAL_NUMBER_LENGTH && secondWord.isNumber()) {
             val containerNumberToCheck = "$firstWord$secondWord"
             val checkDigit = getCheckDigit(containerNumberToCheck)
             Pair(checkDigit in 0..9, checkDigit)
@@ -101,15 +115,18 @@ object ContainerNumberUtils {
     }
 
     fun verifyDigitWithoutDigit(ContainerNumberWithoutDigit: String): Pair<Boolean, Int> {
-        return if (ContainerNumberWithoutDigit.length == CONTAINER_NUMBER_LENGTH - 1) {
-            val firstWord = ContainerNumberWithoutDigit.substring(0, 4)
-            val secondWord = ContainerNumberWithoutDigit.substring(4, CONTAINER_NUMBER_LENGTH - 1)
+        return if (ContainerNumberWithoutDigit.length == CONTAINER_NUMBER_LENGTH - CHECK_DIGIT_LENGTH) {
+            val firstWord = ContainerNumberWithoutDigit.substring(0, CATEGORY_POSITION + 1)
+            val secondWord = ContainerNumberWithoutDigit.substring(
+                CATEGORY_POSITION + 1,
+                CONTAINER_NUMBER_LENGTH - 1
+            )
             verifyDigit(firstWord, secondWord)
         } else Pair(false, -1)
     }
 
-    private fun isValidBICCode(text: String): Boolean {
-        return text.length == 4 && text[3] in arrayOf('U', 'J', 'Z')
+    private fun isValidOwnerCategory(text: String): Boolean {
+        return text.length == OWNER_CATEGORY_LENGTH && text[CATEGORY_POSITION] in ISO_CATEGORIES
     }
 
     fun getContainerNumberVertical(visionText: Text, type: BoundRectType): OcrResult {
@@ -125,15 +142,16 @@ object ContainerNumberUtils {
         var containerNumber = ""
         var rect = Rect()
         run breaker@{
+            logcat("====================================================")
 
             // Build List of Candidate list
             // With each item is a list that have first item isValidBICCode
-            logcat("----------------------------------------------")
-            logcat(visionText.text)
             val blockCandidateList = arrayListOf<List<Text.Element>>()
             visionText.textBlocks.forEachIndexed textBlock@{ index, textBlock ->
+                logcat("---------------------------------------------")
+                logcat(textBlock.text)
                 if (textBlock.lines.size > 0
-                    && isValidBICCode(textBlock.lines[0].text.trim().toUpperCase())
+                    && isValidOwnerCategory(textBlock.lines[0].text.trim().toUpperCase())
                 ) {
                     val listWord = arrayListOf<Text.Element>()
                     var checkLength = 0
@@ -165,6 +183,7 @@ object ContainerNumberUtils {
                 if (listCandidate.isNotEmpty()) {
                     val lineStr =
                         listCandidate.joinToString(separator = "") { word -> word.text.trim() }
+                            .toUpperCase()
                     logcat("Candidate: $lineStr")
                     if (verifyDigit(lineStr)) {
                         containerNumber = lineStr
@@ -177,10 +196,14 @@ object ContainerNumberUtils {
                 }
 
                 // there is a case that last digit number cannot recognize because of rectangle over it
-                listCandidate = getCandidateWordListByLength(listWord, CONTAINER_NUMBER_LENGTH - 1)
+                listCandidate = getCandidateWordListByLength(
+                    listWord,
+                    CONTAINER_NUMBER_LENGTH - CHECK_DIGIT_LENGTH
+                )
                 if (listCandidate.isNotEmpty()) {
                     val lineStr =
                         listCandidate.joinToString(separator = "") { word -> word.text.trim() }
+                            .toUpperCase()
                     logcat("Candidate: $lineStr + ?")
                     val pair = verifyDigitWithoutDigit(lineStr)
                     if (pair.first) {
@@ -200,17 +223,20 @@ object ContainerNumberUtils {
     fun getContainerNumber(visionText: Text, type: BoundRectType): OcrResult {
         var containerNumber = ""
         var rect = Rect()
-        logcat("----------------------------------------------")
-        logcat(visionText.text)
+        logcat("==================================================")
+
         run breaker@{
-            visionText.textBlocks.forEach block@{ block ->
-                block.lines.forEach { line ->
+            val blockCandidateList = arrayListOf<List<Text.Element>>()
+            visionText.textBlocks.forEachIndexed block@{ index, textBlock ->
+                logcat("----------------------------------------------")
+                logcat(textBlock.text)
+                textBlock.lines.forEach { line ->
                     // check if line is a container number
-                    if (verifyDigit(line.text.trim())) {
-                        containerNumber = line.text
+                    var lineStr = line.text.trim().toUpperCase()
+                    if (verifyDigit(lineStr)) {
+                        containerNumber = lineStr
                         rect = getBound(
                             type,
-
                             listOf(
                                 line.boundingBox,
                                 null,
@@ -222,9 +248,9 @@ object ContainerNumberUtils {
 
                     var listCandidate = getCandidateByLength(line.elements, CONTAINER_NUMBER_LENGTH)
                     listCandidate.forEach { itemList ->
-                        val lineStr = itemList.joinToString(
-                            separator = ""
-                        ) { word -> word.text.trim() }
+                        lineStr =
+                            itemList.joinToString(separator = "") { word -> word.text.trim() }
+                                .toUpperCase()
 
                         logcat("Candidate: $lineStr")
                         if (verifyDigit(lineStr)) {
@@ -237,11 +263,14 @@ object ContainerNumberUtils {
                         }
                     }
 
-                    listCandidate = getCandidateByLength(line.elements, CONTAINER_NUMBER_LENGTH - 1)
+                    listCandidate = getCandidateByLength(
+                        line.elements,
+                        CONTAINER_NUMBER_LENGTH - CHECK_DIGIT_LENGTH
+                    )
                     listCandidate.forEach { itemList ->
-                        val lineStr = itemList.joinToString(
-                            separator = ""
-                        ) { word -> word.text.trim() }
+                        lineStr =
+                            itemList.joinToString(separator = "") { word -> word.text.trim() }
+                                .toUpperCase()
 
                         logcat("Candidate: $lineStr ?")
                         val pair = verifyDigitWithoutDigit(lineStr)
@@ -253,6 +282,76 @@ object ContainerNumberUtils {
                             )
                             return@breaker
                         }
+                    }
+                }
+
+                // Build List of Candidate list
+                // With each item is a list that have first item isValidBICCode
+                if (textBlock.lines.size > 0
+                    && isValidOwnerCategory(
+                        textBlock.lines[0].elements[0].text.trim().toUpperCase()
+                    )
+                ) {
+                    val validBICCodeElement = textBlock.lines[0].elements[0]
+
+                    // check nearby TextBlock to add more word
+                    // nearby textBlock is +- 2 item in list
+                    val nearbyTextBlock = arrayListOf<Text.TextBlock>()
+                    for (i in (-2..2)) {
+                        if (i == 0) continue
+                        if (index + i > -1 && index + i < visionText.textBlocks.size) {
+                            nearbyTextBlock.add(visionText.textBlocks[index + i])
+                        }
+                    }
+                    nearbyTextBlock.forEach { block ->
+                        block.lines.forEach { line ->
+                            if (line.text.length >= SERIAL_NUMBER_LENGTH) {
+                                val listWord = arrayListOf<Text.Element>()
+                                listWord.add(validBICCodeElement)
+                                listWord.addAll(line.elements)
+                                blockCandidateList.add(listWord)
+                            }
+                        }
+                    }
+                }
+            }
+
+            //Verify that item have container number chain in this
+            blockCandidateList.forEach { listWord ->
+                var listCandidate = getCandidateWordListByLength(listWord, CONTAINER_NUMBER_LENGTH)
+                if (listCandidate.isNotEmpty()) {
+                    val lineStr =
+                        listCandidate.joinToString(separator = "") { word -> word.text.trim() }
+                            .toUpperCase()
+                    logcat("Candidate: $lineStr")
+                    if (verifyDigit(lineStr)) {
+                        containerNumber = lineStr
+                        rect = getBound(
+                            type,
+                            listCandidate.map { it.boundingBox }
+                        )
+                        return@breaker
+                    }
+                }
+
+                // there is a case that last digit number cannot recognize because of rectangle over it
+                listCandidate = getCandidateWordListByLength(
+                    listWord,
+                    CONTAINER_NUMBER_LENGTH - CHECK_DIGIT_LENGTH
+                )
+                if (listCandidate.isNotEmpty()) {
+                    val lineStr =
+                        listCandidate.joinToString(separator = "") { word -> word.text.trim() }
+                            .toUpperCase()
+                    logcat("Candidate: $lineStr + ?")
+                    val pair = verifyDigitWithoutDigit(lineStr)
+                    if (pair.first) {
+                        containerNumber = lineStr + pair.second
+                        rect = getBound(
+                            type,
+                            listCandidate.map { it.boundingBox }
+                        )
+                        return@breaker
                     }
                 }
             }

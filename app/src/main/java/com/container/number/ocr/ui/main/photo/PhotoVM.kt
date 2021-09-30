@@ -95,7 +95,7 @@ class PhotoVM : ViewModel() {
                     }
                 _logs = ocrResult.logs
                 _logsLiveData.postValue(Event(ocrResult.logs))
-                
+
                 if (ocrResult.containerNumber.isNotEmpty()){
                     _containerNumberLiveData.postValue(Event(ocrResult.containerNumber))
                     _containerNumber = ocrResult.containerNumber
