@@ -23,4 +23,7 @@ class PhotoOcr {
 
     @ColumnInfo
     var algorithm: OcrAlgorithm = OcrAlgorithm.OneLine
+
+    @ColumnInfo
+    var logs: String = ""
 }

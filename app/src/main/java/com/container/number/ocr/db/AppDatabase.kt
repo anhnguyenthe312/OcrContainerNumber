@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.container.number.ocr.db.dao.PhotoOcrDao
 import com.container.number.ocr.model.data.RectConverter
 import com.container.number.ocr.model.entity.PhotoOcr
@@ -12,7 +14,7 @@ import com.container.number.ocr.model.type.OcrAlgorithm
 import com.container.number.ocr.model.type.Evaluate
 
 @Database(
-    version = 1,
+    version = 2,
     exportSchema = false,
     entities = [
         PhotoOcr::class,
@@ -35,13 +37,21 @@ abstract class AppDatabase : RoomDatabase() {
                         AppDatabase::class.java,
                         "local.db"
                     )
+                        .addMigrations(from1To2)
                         .build()
                 }
             }
             return appDatabase!!
         }
+        private val from1To2 = object : Migration(1, 2){
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE `PhotoOcr` ADD COLUMN `logs` TEXT DEFAULT ''")
+            }
 
+        }
     }
+
+
 
     //Dao
     abstract fun photoOcrDao(): PhotoOcrDao

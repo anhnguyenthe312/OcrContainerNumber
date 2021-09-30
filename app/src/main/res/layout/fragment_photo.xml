@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginBottom="5dp"
-        app:layout_constraintBottom_toTopOf="@id/txtContainerNumber"
+        app:layout_constraintBottom_toTopOf="@id/txtAllText"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -27,6 +27,31 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintEnd_toStartOf="@id/txtContainerNumber"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <ScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        app:layout_constraintBottom_toTopOf="@id/txtLabel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtAllText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:scrollbars="vertical"
+                android:textAllCaps="true"
+                android:textColor="#000"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </ScrollView>
 
     <TextView
         android:id="@+id/txtContainerNumber"

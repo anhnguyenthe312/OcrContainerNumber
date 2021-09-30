@@ -112,22 +112,24 @@ object ContainerNumberUtils {
         return text.length == 4 && text[3] in arrayOf('U', 'J', 'Z')
     }
 
-    fun getContainerNumberVertical(visionText: Text, type: BoundRectType): Pair<String, Rect> {
+    fun getContainerNumberVertical(visionText: Text, type: BoundRectType): OcrResult {
         var containerNumber = ""
         var rect = Rect()
         run breaker@{
 
         }
-        return Pair(containerNumber, rect)
+        return OcrResult(containerNumber, rect, visionText.text)
     }
 
-    fun getContainerNumber2Line(visionText: Text, type: BoundRectType): Pair<String, Rect> {
+    fun getContainerNumber2Line(visionText: Text, type: BoundRectType): OcrResult {
         var containerNumber = ""
         var rect = Rect()
         run breaker@{
 
             // Build List of Candidate list
             // With each item is a list that have first item isValidBICCode
+            logcat("----------------------------------------------")
+            logcat(visionText.text)
             val blockCandidateList = arrayListOf<List<Text.Element>>()
             visionText.textBlocks.forEachIndexed textBlock@{ index, textBlock ->
                 if (textBlock.lines.size > 0
@@ -192,12 +194,14 @@ object ContainerNumberUtils {
                 }
             }
         }
-        return Pair(containerNumber, rect)
+        return OcrResult(containerNumber, rect, visionText.text)
     }
 
-    fun getContainerNumber(visionText: Text, type: BoundRectType): Pair<String, Rect> {
+    fun getContainerNumber(visionText: Text, type: BoundRectType): OcrResult {
         var containerNumber = ""
         var rect = Rect()
+        logcat("----------------------------------------------")
+        logcat(visionText.text)
         run breaker@{
             visionText.textBlocks.forEach block@{ block ->
                 block.lines.forEach { line ->
@@ -253,7 +257,7 @@ object ContainerNumberUtils {
                 }
             }
         }
-        return Pair(containerNumber, rect)
+        return OcrResult(containerNumber, rect, visionText.text)
     }
 
     private fun getCandidateWordListByLength(
@@ -334,4 +338,10 @@ object ContainerNumberUtils {
         SQUARE,
         CORRECT_BOUND
     }
+
+    data class OcrResult(
+        var containerNumber: String,
+        var rect: Rect,
+        var logs: String
+    )
 }

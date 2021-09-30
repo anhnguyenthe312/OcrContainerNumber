@@ -15,6 +15,7 @@ import com.bumptech.glide.Glide
 import com.container.number.ocr.R
 import com.container.number.ocr.constant.Constants
 import com.container.number.ocr.databinding.FragmentPhotoBinding
+import com.container.number.ocr.extension.logcat
 import com.container.number.ocr.model.data.Event
 import com.container.number.ocr.model.data.EventObserver
 import com.container.number.ocr.model.data.Resource
@@ -118,7 +119,7 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
                             viewModel.originalBitmap!!,
                             ivPhoto,
                             requireContext(),
-                            (WidthHeightUtils.getScreenWidth(requireActivity()) * 0.9F).toInt()
+                            (WidthHeightUtils.getScreenHeight(requireActivity()) * 0.9F).toInt()
                         )
                     }
                 }
@@ -141,7 +142,7 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
                     it,
                     ivPhoto,
                     requireContext(),
-                    (WidthHeightUtils.getScreenWidth(requireActivity()) * 0.9F).toInt()
+                    (WidthHeightUtils.getScreenHeight(requireActivity()) * 0.9F).toInt()
                 )
             }
         })
@@ -155,6 +156,12 @@ class PhotoFragment : Fragment(), TextOnImageAnalyzer.TextRecognizedListener {
             binding?.apply {
                 txtContainerNumber.text = it
                 btnEvaluate.isEnabled = true
+            }
+        })
+
+        viewModel.logsLiveData.observe(viewLifecycleOwner, EventObserver {
+            binding?.apply {
+                txtAllText.text = it
             }
         })
 

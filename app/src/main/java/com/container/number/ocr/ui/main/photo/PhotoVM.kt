@@ -47,6 +47,10 @@ class PhotoVM : ViewModel() {
 
     var currentAlgorithm: OcrAlgorithm = OcrAlgorithm.OneLine
 
+    private var _logs: String = ""
+    private var _logsLiveData = MutableLiveData<Event<String>>()
+    val logsLiveData: LiveData<Event<String>> get() = _logsLiveData
+
     val saveDbSuccess: MutableLiveData<Event<Boolean>> = MutableLiveData()
 
     fun loadPhotoFromUri(context: Context, photoUri: Uri) {
@@ -83,18 +87,22 @@ class PhotoVM : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             if (originalBitmap != null) {
                 //recognize container number
-                val (containerNumber, rect) =
+                val ocrResult =
                     when(ocrAlgorithm){
                         OcrAlgorithm.OneLine -> ContainerNumberUtils.getContainerNumber(text, ContainerNumberUtils.BoundRectType.CORRECT_BOUND)
                         OcrAlgorithm.TwoLine -> ContainerNumberUtils.getContainerNumber2Line(text, ContainerNumberUtils.BoundRectType.CORRECT_BOUND)
                         OcrAlgorithm.Vertical -> ContainerNumberUtils.getContainerNumberVertical(text, ContainerNumberUtils.BoundRectType.CORRECT_BOUND)
                     }
-                if (containerNumber.isNotEmpty()){
-                    _containerNumberLiveData.postValue(Event(containerNumber))
-                    _containerNumber = containerNumber
-                    savedDrawRect = rect
+                _logs = ocrResult.logs
+                _logsLiveData.postValue(Event(ocrResult.logs))
+                
+                if (ocrResult.containerNumber.isNotEmpty()){
+                    _containerNumberLiveData.postValue(Event(ocrResult.containerNumber))
+                    _containerNumber = ocrResult.containerNumber
+                    savedDrawRect = ocrResult.rect
+
                     val boundingBitmap =
-                        BitmapUtils.drawBoundingBox(originalBitmap!!, rect, containerNumber, "")
+                        BitmapUtils.drawBoundingBox(originalBitmap!!, ocrResult.rect, ocrResult.containerNumber, "")
                     _photoBitmap.postValue(boundingBitmap)
                 }
             }
@@ -118,6 +126,7 @@ class PhotoVM : ViewModel() {
                 this.containerNumber = _containerNumber
                 this.evaluate = evaluate
                 this.algorithm = algorithm
+                this.logs = _logs
             }
             AppDatabase.buildDatabase(context).photoOcrDao().insert(photoOcr)
             saveDbSuccess.postValue(Event(true))
